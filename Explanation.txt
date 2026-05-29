@@ -1,0 +1,144 @@
+# Grade Tracker – Write-up
+
+## 1. Where exactly in your code does the grade get calculated?
+
+The grade is calculated inside the `calculate_grade()` function.
+
+```python
+def calculate_grade(score, max_score):
+
+    percentage = (score / max_score) * 100
+
+    if percentage >= 90:
+        return "A"
+
+    elif percentage >= 75:
+        return "B"
+
+    elif percentage >= 50:
+        return "C"
+
+    else:
+        return "Fail"
+```
+
+### Explanation
+
+* First, the percentage is calculated using:
+
+```python
+percentage = (score / max_score) * 100
+```
+
+* Then the percentage is checked:
+
+  * 90 and above → Grade A
+  * 75 to 89 → Grade B
+  * 50 to 74 → Grade C
+  * Below 50 → Fail
+
+The returned grade is then stored in the database along with the student marks.
+
+---
+
+## 2. What SQL query gives you the class average in `/summary`?
+
+The SQL query used to calculate the class average is:
+
+```sql
+SELECT AVG(score) AS class_average
+FROM students;
+```
+
+### Explanation
+
+* `AVG(score)` calculates the average of all student scores.
+* `AS class_average` gives a readable name to the result.
+* `FROM students` means the values are taken from the `students` table.
+
+Example output:
+
+```json
+{
+    "class_average": 78.5
+}
+```
+
+---
+
+## 3. What happens if someone sends a score of -10 or 150 when max_score is 100?
+
+The API validates the score before inserting data into the database.
+
+Validation code:
+
+```python
+if score < 0 or score > max_score:
+    return jsonify({
+        "error": "Invalid score. Score must be between 0 and max_score"
+    }), 400
+```
+
+---
+
+### Example 1 – Score = -10
+
+Request:
+
+```json
+{
+    "name": "Jeeva",
+    "subject": "Maths",
+    "score": -10,
+    "max_score": 100
+}
+```
+
+Response:
+
+```json
+{
+    "error": "Invalid score. Score must be between 0 and max_score"
+}
+```
+
+Status Code:
+
+```python
+400 Bad Request
+```
+
+---
+
+### Example 2 – Score = 150
+
+Request:
+
+```json
+{
+    "name": "Jeeva",
+    "subject": "Science",
+    "score": 150,
+    "max_score": 100
+}
+```
+
+Response:
+
+```json
+{
+    "error": "Invalid score. Score must be between 0 and max_score"
+}
+```
+
+Status Code:
+
+```python
+400 Bad Request
+```
+
+### Explanation
+
+* Negative marks are not allowed.
+* Scores greater than `max_score` are also not allowed.
+* The API immediately stops the insertion and sends an error response.
